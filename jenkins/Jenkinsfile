@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  Sufyan Collection by Capra — Jenkins CI/CD Pipeline
+//  Sufyan Collection — Jenkins CI/CD Pipeline
 //  Declarative Pipeline
 // ─────────────────────────────────────────────────────────────
 
@@ -269,7 +269,7 @@ pipeline {
             echo """
             ╔══════════════════════════════════════════╗
             ║   ✅  DEPLOYMENT SUCCESSFUL               ║
-            ║   App:    Sufyan Collection by Capra      ║
+            ║   App:    Sufyan Collection      ║
             ║   Build:  #${BUILD_NUMBER}                ║
             ║   Tag:    ${env.IMAGE_TAG ?: 'N/A'}       ║
             ╚══════════════════════════════════════════╝
