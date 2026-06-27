@@ -1,0 +1,92 @@
+# ─────────────────────────────────────────────────────────────
+#  Tier 3 — MongoDB  (PersistentVolumeClaim + Deployment + Service)
+# ─────────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+  namespace: sufyan-collection
+  labels:
+    app: sc-mongo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc-mongo
+  namespace: sufyan-collection
+  labels:
+    app: sc-mongo
+    tier: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sc-mongo
+  strategy:
+    type: Recreate          # Avoid data conflicts on restart
+  template:
+    metadata:
+      labels:
+        app: sc-mongo
+        tier: database
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7.0
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: sufyan_collection
+          volumeMounts:
+            - name: mongo-storage
+              mountPath: /data/db
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu:    "250m"
+            limits:
+              memory: "512Mi"
+              cpu:    "500m"
+          livenessProbe:
+            exec:
+              command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+            initialDelaySeconds: 40
+            periodSeconds:       30
+            timeoutSeconds:      10
+            failureThreshold:    3
+          readinessProbe:
+            exec:
+              command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+            initialDelaySeconds: 20
+            periodSeconds:       15
+            timeoutSeconds:      5
+      volumes:
+        - name: mongo-storage
+          persistentVolumeClaim:
+            claimName: mongo-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sc-mongo-service
+  namespace: sufyan-collection
+  labels:
+    app: sc-mongo
+spec:
+  selector:
+    app: sc-mongo
+  ports:
+    - protocol: TCP
+      port:       27017
+      targetPort: 27017
+  type: ClusterIP

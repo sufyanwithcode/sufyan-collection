@@ -1,0 +1,139 @@
+version: '3.9'
+
+# ─────────────────────────────────────────────────────────────
+#  Sufyan Collection by Capra — Docker Compose
+# ─────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Tier 3 — Database ──────────────────────────────────────
+  mongo:
+    image: mongo:7.0
+    container_name: sc_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: sufyan_collection
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - sc_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ── Tier 2 — Backend ───────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sc_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/sufyan_collection
+      JWT_SECRET: ${JWT_SECRET:-sufyan_collection_jwt_secret_2024}
+      JWT_EXPIRE: 30d
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - sc_net
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Tier 1 — Frontend ──────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: /api
+    container_name: sc_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - sc_net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Prometheus ─────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: sc_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - sc_net
+
+  # ── Grafana ────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: sc_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-Grafana@123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - sc_net
+
+  # ── Mongo Express (DB Admin UI) ────────────────────────────
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: sc_mongo_express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASS:-Admin@123}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+    networks:
+      - sc_net
+
+volumes:
+  mongo_data:      { name: sc_mongo_data }
+  uploads_data:    { name: sc_uploads_data }
+  prometheus_data: { name: sc_prometheus_data }
+  grafana_data:    { name: sc_grafana_data }
+
+networks:
+  sc_net:
+    name: sufyan_collection_network
+    driver: bridge

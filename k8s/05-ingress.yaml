@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────
+#  Ingress — routes traffic to frontend and backend
+#  Requires: kubectl apply -f https://raw.githubusercontent.com/
+#            kubernetes/ingress-nginx/main/deploy/static/provider/
+#            cloud/deploy.yaml
+# ─────────────────────────────────────────────────────────────
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sc-ingress
+  namespace: sufyan-collection
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target:      /
+    nginx.ingress.kubernetes.io/proxy-body-size:     "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout:  "60"
+    nginx.ingress.kubernetes.io/ssl-redirect:        "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: sufyan-collection.local
+      http:
+        paths:
+          # Route /api/* to backend
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: sc-backend-service
+                port:
+                  number: 5000
+          # Route everything else to frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sc-frontend-service
+                port:
+                  number: 80

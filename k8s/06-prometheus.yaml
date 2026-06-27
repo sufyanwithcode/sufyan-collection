@@ -1,0 +1,163 @@
+# ─────────────────────────────────────────────────────────────
+#  Prometheus — ConfigMap + Deployment + Service
+# ─────────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: sufyan-collection
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval:     15s
+      evaluation_interval: 15s
+      external_labels:
+        monitor: 'sufyan-collection-k8s'
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'sufyan-collection-api'
+        static_configs:
+          - targets: ['sc-backend-service:5000']
+        metrics_path: /metrics
+        scrape_interval: 10s
+
+      # Auto-discover pods annotated with prometheus.io/scrape=true
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - sufyan-collection
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: sufyan-collection
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc-prometheus
+  namespace: sufyan-collection
+  labels:
+    app: sc-prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sc-prometheus
+  template:
+    metadata:
+      labels:
+        app: sc-prometheus
+    spec:
+      serviceAccountName: prometheus-sa
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.48.0
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--web.enable-lifecycle'
+            - '--storage.tsdb.retention.time=15d'
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: storage
+              mountPath: /prometheus
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu:    "100m"
+            limits:
+              memory: "512Mi"
+              cpu:    "250m"
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        - name: storage
+          persistentVolumeClaim:
+            claimName: prometheus-pvc
+
+---
+# ServiceAccount for Prometheus pod discovery
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-sa
+  namespace: sufyan-collection
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-role
+rules:
+  - apiGroups: [""]
+    resources: ["nodes","services","endpoints","pods"]
+    verbs: ["get","list","watch"]
+  - apiGroups: ["extensions","networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get","list","watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-role
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-sa
+    namespace: sufyan-collection
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sc-prometheus-service
+  namespace: sufyan-collection
+  labels:
+    app: sc-prometheus
+spec:
+  selector:
+    app: sc-prometheus
+  ports:
+    - port:     9090
+      targetPort: 9090
+      nodePort: 30090
+      name: web
+  type: NodePort

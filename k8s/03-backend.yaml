@@ -1,0 +1,145 @@
+# ─────────────────────────────────────────────────────────────
+#  Tier 2 — Node.js / Express Backend
+# ─────────────────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc-backend
+  namespace: sufyan-collection
+  labels:
+    app: sc-backend
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sc-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge:        1
+      maxUnavailable:  0
+  template:
+    metadata:
+      labels:
+        app: sc-backend
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "5000"
+        prometheus.io/path:   "/metrics"
+    spec:
+      containers:
+        - name: backend
+          image: sufyanwithcode/sc-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+              name: http
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: sc-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: sc-config
+                  key: PORT
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: sc-config
+                  key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: JWT_SECRET
+            - name: JWT_EXPIRE
+              valueFrom:
+                configMapKeyRef:
+                  name: sc-config
+                  key: JWT_EXPIRE
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: sc-config
+                  key: FRONTEND_URL
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu:    "100m"
+            limits:
+              memory: "256Mi"
+              cpu:    "300m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds:       30
+            timeoutSeconds:      10
+            failureThreshold:    3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds:       10
+            timeoutSeconds:      5
+            failureThreshold:    3
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: uploads
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sc-backend-service
+  namespace: sufyan-collection
+  labels:
+    app: sc-backend
+spec:
+  selector:
+    app: sc-backend
+  ports:
+    - protocol: TCP
+      port:       5000
+      targetPort: 5000
+      name:       http
+  type: ClusterIP
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sc-backend-hpa
+  namespace: sufyan-collection
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sc-backend
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type:               AverageUtilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type:               AverageUtilization
+          averageUtilization: 80
