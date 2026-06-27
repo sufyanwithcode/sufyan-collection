@@ -1,4 +1,4 @@
-# Sufyan Collection — by Capra
+# Sufyan Collection
 
 > Premium Pakistani fashion brand — 3-Tier DevOps Application
 
