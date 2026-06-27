@@ -68,7 +68,7 @@ export default function Footer() {
 
         <div style={{ padding:'22px 0', display:'flex', justifyContent:'space-between',
           alignItems:'center', flexWrap:'wrap', gap:12, fontSize:12.5 }}>
-          <p>© {new Date().getFullYear()} Sufyan Collection by Capra. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Sufyan Collection. All rights reserved.</p>
           <div style={{ display:'flex', gap:20 }}>
             <Link to="#!">Privacy Policy</Link>
             <Link to="#!">Terms of Service</Link>

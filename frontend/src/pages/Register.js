@@ -30,7 +30,7 @@ export default function Register() {
           <div style={{ fontFamily:'Cormorant Garamond,serif', fontSize:'1.5rem',
             color:'var(--ink)', fontWeight:700 }}>Sufyan Collection</div>
           <div style={{ fontSize:'9px', letterSpacing:'3px', color:'var(--gold)', textTransform:'uppercase' }}>
-            by Capra
+           
           </div>
         </Link>
         <h2 style={{ fontFamily:'Cormorant Garamond,serif', fontSize:'1.8rem',

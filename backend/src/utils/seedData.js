@@ -201,14 +201,14 @@ const seed = async () => {
         colors:[{name:'White',hex:'#FFFFFF',stock:40},{name:'Sky Blue',hex:'#87CEEB',stock:40},{name:'Light Green',hex:'#90EE90',stock:40}],
         sizes:[{label:'S',stock:25},{label:'M',stock:35},{label:'L',stock:35},{label:'XL',stock:25}] },
 
-      { name:'Capra Signature Polo',     price:1200, isNewArrival:true, isBestSeller:true,
+      { name:'Sufyan Signature Polo',     price:1200, isNewArrival:true, isBestSeller:true,
         category:C['Casual Wear'],  subcategory:'T-Shirts', stock:200,
-        description:'Premium polo shirt featuring the iconic Capra branding. Made from combed cotton for superior softness and durability.',
+        description:'Premium polo shirt featuring the iconic Sufyan branding. Made from combed cotton for superior softness and durability.',
         shortDescription:'Iconic Capra signature polo shirt',
         fabric:'100% Combed Cotton',
         care:['Machine wash warm','Do not bleach'],
-        tags:['polo','t-shirt','casual','capra'],
-        images:[{url:IMG.polo, alt:'Capra Polo', isPrimary:true}],
+        tags:['polo','t-shirt','casual','sufyan'],
+        images:[{url:IMG.polo, alt:'Sufyan Polo', isPrimary:true}],
         colors:[{name:'Black',hex:'#000000',stock:60},{name:'White',hex:'#FFFFFF',stock:60},{name:'Navy',hex:'#000080',stock:40},{name:'Red',hex:'#FF0000',stock:40}],
         sizes:[{label:'S',stock:40},{label:'M',stock:60},{label:'L',stock:60},{label:'XL',stock:40}] },
 

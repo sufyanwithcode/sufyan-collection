@@ -1,4 +1,4 @@
-# Sufyan Collection by Capra
+# Sufyan Collection
 ## Complete Deployment Commands Reference
 
 > All Linux, Docker, Kubernetes, Jenkins, and Git commands in one place.
@@ -127,7 +127,7 @@ cd sufyan-collection
 # Initialize a new repo (if not already done)
 git init
 git add .
-git commit -m "feat: initial commit - Sufyan Collection by Capra"
+git commit -m "feat: initial commit - Sufyan Collection"
 
 # Add remote and push
 git remote add origin https://github.com/sufyanwithcode/sufyan-collection.git
@@ -887,4 +887,4 @@ kubectl exec -it $(kubectl get pod -l app=sc-backend -n sufyan-collection \
 
 ---
 
-*Last updated: 2024 — Sufyan Collection by Capra*
+*Last updated: 2024 — Sufyan Collection*

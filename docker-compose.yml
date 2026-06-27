@@ -1,7 +1,7 @@
 version: '3.9'
 
 # ─────────────────────────────────────────────────────────────
-#  Sufyan Collection by Capra — Docker Compose
+#  Sufyan Collection — Docker Compose
 # ─────────────────────────────────────────────────────────────
 
 services:

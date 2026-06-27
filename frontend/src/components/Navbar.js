@@ -66,7 +66,7 @@ export default function Navbar() {
               Sufyan Collection
             </span>
             <span style={{ fontSize:'9px', letterSpacing:'3px', textTransform:'uppercase', color:'#c9a84c' }}>
-              by Capra
+             
             </span>
           </Link>
 

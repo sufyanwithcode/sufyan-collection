@@ -195,7 +195,7 @@ export default function Home() {
       <section className="section" style={{ background:'var(--parchment)' }}>
         <div className="container">
           <div className="section-header">
-            <div className="section-label">The Capra Promise</div>
+            <div className="section-label">Our Promise</div>
             <h2 className="section-title">Why Choose Sufyan Collection</h2>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))', gap:24 }}>
